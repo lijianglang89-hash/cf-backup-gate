@@ -9,6 +9,7 @@ The workflow requires these repository secrets:
 - `CHECK_WORKER`
 - `EDT_UUID`
 - `EDT_DOMAIN`
+- `EDT_ADMIN`
 - `EDGE_HOSTS`
 
 Upstream components:

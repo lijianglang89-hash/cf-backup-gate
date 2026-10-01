@@ -55,6 +55,12 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: Sync node list to edgetunnel
+        env:
+          EDT_DOMAIN: ${{ secrets.EDT_DOMAIN }}
+          EDT_ADMIN: ${{ secrets.EDT_ADMIN }}
+        run: python sync_edgetunnel.py public/hosts.txt
+
       - name: Show site URL
         run: |
           repo="${GITHUB_REPOSITORY#*/}"
