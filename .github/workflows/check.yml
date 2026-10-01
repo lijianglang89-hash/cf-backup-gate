@@ -1,0 +1,61 @@
+name: VPN Gate Node Check
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gate-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Get VPN Gate nodes + check via Cloudflare Worker + build page
+        run: python vpngate.py
+        env:
+          CHECK_WORKER: ${{ secrets.CHECK_WORKER }}
+          EDT_UUID: ${{ secrets.EDT_UUID }}
+          EDT_DOMAIN: ${{ secrets.EDT_DOMAIN }}
+          EDGE_HOSTS: ${{ secrets.EDGE_HOSTS }}
+          CHAIN_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/chains.txt
+          HOSTS_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/hosts.txt
+          SUB_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/sub.txt
+          CHECK_CONCURRENCY: "32"
+          CHECK_TIMEOUT: "90"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Show site URL
+        run: |
+          repo="${GITHUB_REPOSITORY#*/}"
+          echo "site: https://${GITHUB_REPOSITORY_OWNER}.github.io/${repo}/ (deploy outcome: ${{ steps.deployment.outcome }})"
